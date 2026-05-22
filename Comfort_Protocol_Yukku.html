@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For Yukku</title>
+    <style>
+        :root {
+            --bg-color: #1a1820;
+            --card-bg: #262330;
+            --text-main: #eaddf0;
+            --text-muted: #a79cb3;
+            --accent: #9d7bb0;
+            --accent-glow: rgba(157, 123, 176, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.8s ease-out;
+        }
+
+        .status-text {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+            text-align: center;
+            font-weight: 300;
+        }
+
+        .progress-container {
+            width: 70%;
+            max-width: 300px;
+            height: 6px;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+            transition: width 0.1s linear;
+        }
+
+        /* Main App Interface */
+        #main-app {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+            padding: 30px 20px;
+            opacity: 0;
+            animation: fadeIn 1s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 400;
+            margin-bottom: 5px;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        /* Flip Cards */
+        .cards-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 40px;
+            perspective: 1000px;
+        }
+
+        .card {
+            width: 100%;
+            height: 90px;
+            position: relative;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+
+        .card.flipped {
+            transform: rotateX(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .card-front {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(157, 123, 176, 0.2);
+            color: var(--text-main);
+        }
+
+        .card-back {
+            background-color: var(--accent);
+            color: #1a1820;
+            transform: rotateX(180deg);
+            font-weight: 500;
+        }
+
+        /* Action Button */
+        .btn {
+            background-color: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover, .btn:active {
+            background-color: var(--accent);
+            color: #1a1820;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        /* Modal */
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(26, 24, 32, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        #modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            padding: 40px 30px;
+            border-radius: 16px;
+            width: 85%;
+            max-width: 350px;
+            text-align: center;
+            border: 1px solid rgba(157, 123, 176, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform: translateY(20px);
+            transition: transform 0.4s ease;
+        }
+
+        #modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-text {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .close-btn {
+            background-color: var(--accent);
+            border: none;
+            color: #1a1820;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="status-text" id="status-text">Initializing comfort protocol...</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-app">
+        <h1>Hey Bujjulu</h1>
+        <div class="subtitle">Tap to reveal</div>
+
+        <div class="cards-container">
+            <!-- Card 1 -->
+            <div class="card" onclick="this.classList.toggle('flipped')">
+                <div class="card-face card-front">
+                    About eating your brain on call earlier...
+                </div>
+                <div class="card-face card-back">
+                    I know I lack the right words to comfort you sometimes. So I built this instead.
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="card" onclick="this.classList.toggle('flipped')">
+                <div class="card-face card-front">
+                    If I were there with you right now...
+                </div>
+                <div class="card-face card-back">
+                    I wouldn't ask questions. I'd just get you Aamras Puri and let you rest.
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="card" onclick="this.classList.toggle('flipped')">
+                <div class="card-face card-front">
+                    Your only task for today...
+                </div>
+                <div class="card-face card-back">
+                    Is to shut off your mind. No teaching me, no overthinking. Just rest.
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" id="open-modal-btn">A little note</button>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal">
+        <div class="modal-content">
+            <div class="modal-text">
+                I know this LDR comfort thing is new to me, and I might fumble trying to find the right words on call. <br><br>
+                You don't have to teach me everything, Andi. I am learning. For now, just close your eyes and rest your brain. <br><br>
+                We are a Team. Team AkYu and teammates help and support each other out to win the game, and I don't just wanna win the title, I want to defend it as well. I'm right here with you, always. <br><br>
+                Love you, bacchu.
+         <br><br>
+            </div>
+            <button class="close-btn" id="close-modal-btn">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Loading Sequence Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const progressBar = document.getElementById('progress-bar');
+            const statusText = document.getElementById('status-text');
+            const loadingScreen = document.getElementById('loading-screen');
+            const mainApp = document.getElementById('main-app');
+
+            const loadingPhases = [
+                { width: 20, text: "Scanning exhaustion levels..." },
+                { width: 50, text: "Bypassing 'burra thinta' mode..." },
+                { width: 80, text: "Compiling digital comfort..." },
+                { width: 100, text: "Ready." }
+            ];
+
+            let currentPhase = 0;
+
+            function updateLoader() {
+                if (currentPhase < loadingPhases.length) {
+                    progressBar.style.width = loadingPhases[currentPhase].width + '%';
+                    statusText.innerText = loadingPhases[currentPhase].text;
+                    currentPhase++;
+                    setTimeout(updateLoader, 800); // 800ms per phase
+                } else {
+                    setTimeout(() => {
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            mainApp.style.display = 'flex';
+                        }, 800);
+                    }, 400);
+                }
+            }
+
+            // Start loader
+            setTimeout(updateLoader, 500);
+
+            // Modal Logic
+            const modal = document.getElementById('modal');
+            const openBtn = document.getElementById('open-modal-btn');
+            const closeBtn = document.getElementById('close-modal-btn');
+
+            openBtn.addEventListener('click', () => {
+                modal.classList.add('active');
+            });
+
+            closeBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+            });
+
+            // Close modal if clicked outside content
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
